@@ -1,10 +1,13 @@
 package com.example.demosecurity.controller;
 
 import com.example.demosecurity.model.PersonInfo;
+import com.example.demosecurity.model.Users;
 import com.example.demosecurity.repository.PersonRepository;
+import com.example.demosecurity.repository.UsersRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,9 +18,11 @@ import javax.validation.Valid;
 @RequestMapping("/person")
 public class PersonController {
 PersonRepository personRepository;
+    UsersRepository userRpository;
 
-    public PersonController(PersonRepository personRepository) {
+    public PersonController(PersonRepository personRepository, UsersRepository userRpository) {
         this.personRepository = personRepository;
+        this.userRpository = userRpository;
     }
 
     @ApiOperation(value = "this is method for getting person-info")
@@ -100,5 +105,16 @@ public ResponseEntity edit(@PathVariable int id,@RequestBody PersonInfo personIn
     public ResponseEntity ccedenied(){
 
         return ResponseEntity.ok("access-denied");
+    }
+    @PostMapping("/registerencode")
+    public ResponseEntity register(@RequestBody Users a){
+        String pass=a.getPassword();
+        String b=hash(a.getPassword());
+        a.setPassword(b);
+        userRpository.save(a);
+        return ResponseEntity.ok("created");
+    }
+    public String hash(String password) {
+        return BCrypt.hashpw(password, BCrypt.gensalt(10));
     }
 }
