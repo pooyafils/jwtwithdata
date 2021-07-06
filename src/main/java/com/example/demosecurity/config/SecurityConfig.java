@@ -23,16 +23,17 @@ import javax.sql.DataSource;
 @Configuration
 public class SecurityConfig extends
         WebSecurityConfigurerAdapter {
-    private final PasswordEncoder passwordEncoder;
+   // private final PasswordEncoder passwordEncoder;
 
-    public SecurityConfig(PasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
-    }
-
-  /*  @Override
+   // public SecurityConfig(PasswordEncoder passwordEncoder) {
+     //   this.passwordEncoder = passwordEncoder;
+ //   }
+   @Autowired
+   private DataSource securityDataSource;
+   @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.jdbcAuthentication().dataSource(securityDataSource);   //other type of the basic auth with db
-    }*/
+    }
 
 /*    @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -77,9 +78,9 @@ public class SecurityConfig extends
     @Override
    @Bean
     protected UserDetailsService userDetailsService()  { //basic auth with userdetail memory type
-    //    return new JdbcUserDetailsManager(securityDataSource);
-      UserDetails myUser= User.builder().username("pass").password(passwordEncoder.encode("pass")).roles("ADMIN").build(); //in memeory
-    return new InMemoryUserDetailsManager(myUser);
+       return new JdbcUserDetailsManager(securityDataSource);
+    //  UserDetails myUser= User.builder().username("pass").password(passwordEncoder.encode("pass")).roles("ADMIN").build(); //in memeory
+  //  return new InMemoryUserDetailsManager(myUser);
 }
 
 
