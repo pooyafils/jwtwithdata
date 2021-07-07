@@ -1,12 +1,15 @@
 package com.example.demosecurity.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,21 +23,12 @@ import javax.sql.DataSource;
 @Configuration
 public class SecurityConfig extends
         WebSecurityConfigurerAdapter {
-    //private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    // public SecurityConfig(PasswordEncoder passwordEncoder) {
-    //    this.passwordEncoder = passwordEncoder;
-    //  }
-    @Autowired
-    private DataSource securityDataSource;
-    @Autowired
-    public void configAuthentication(AuthenticationManagerBuilder auth) throws Exception {
-        auth.jdbcAuthentication().passwordEncoder(new BCryptPasswordEncoder())
-                .dataSource(securityDataSource)
-                .usersByUsernameQuery("select username, password, enabled from users where username=?")
-                .authoritiesByUsernameQuery("select username, role from users where username=?")
-        ;
+    public SecurityConfig(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
     }
+
   /*  @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.jdbcAuthentication().dataSource(securityDataSource);   //other type of the basic auth with db
@@ -72,22 +66,28 @@ public class SecurityConfig extends
                 .and()
                 .authorizeRequests()
                 .antMatchers(HttpMethod.GET, "/person/getAll").hasRole("ADMIN")
+                .antMatchers(HttpMethod.GET,"/person/one/{id}").hasRole("USER")
                 .antMatchers(HttpMethod.POST, "/person/register").hasRole("USER")
                 .antMatchers("/").permitAll()
                 .and().exceptionHandling().accessDeniedPage("/person/access-deniedSS")
                 .and()
                 .csrf().disable()
-                .formLogin().disable();
+                .formLogin().disable()
+        ;
     }
 
-/*    @Override
-   @Bean
-    protected UserDetailsService userDetailsService()  { //basic auth with userdetail memory type
-        return new JdbcUserDetailsManager(securityDataSource);
-      UserDetails myUser= User.builder().username("pass").password(passwordEncoder.encode("pass")).roles("ADMIN").build(); //in memeory
-    return new InMemoryUserDetailsManager(myUser);
-}*/
+    @Override
+    @Bean
+    protected UserDetailsService userDetailsService()  { //basic auth with userdetail memory type\
+        UserDetails user=User.builder()
+                .username("user").password(passwordEncoder.encode("pass")).roles(ApplicationUserRole.USER.name())
+                .build();
+
+        UserDetails annaSmithUser=User.builder()
+                .username("pass").password(passwordEncoder.encode("pass")).roles(ApplicationUserRole.ADMIN.name())
+                .build();
+        return new InMemoryUserDetailsManager(annaSmithUser,user);
+    }
 
 
 }
-

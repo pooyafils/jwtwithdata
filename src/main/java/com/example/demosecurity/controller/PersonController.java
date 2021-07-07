@@ -31,7 +31,7 @@ PersonRepository personRepository;
         return ResponseEntity.ok(personRepository.findAll());
     }
     @ApiOperation(value = "getting person-info by id")
-    @GetMapping("/{id}")
+    @GetMapping("/one/{id}")
     public ResponseEntity getPersonById (@PathVariable int id){
         return  ResponseEntity.ok(personRepository.findById(id));
     }
@@ -106,7 +106,7 @@ public ResponseEntity edit(@PathVariable int id,@RequestBody PersonInfo personIn
 
         return ResponseEntity.ok("access-denied");
     }
-    @PostMapping("/registerencode")
+    @PostMapping("/  ")
     public ResponseEntity register(@RequestBody Users a){
         String pass=a.getPassword();
         String b=hash(a.getPassword());
