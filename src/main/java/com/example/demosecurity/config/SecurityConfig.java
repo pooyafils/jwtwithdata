@@ -18,6 +18,9 @@ import org.springframework.security.provisioning.JdbcUserDetailsManager;
 
 import javax.sql.DataSource;
 
+import static com.example.demosecurity.config.ApplicationUserPermission.*;
+import static com.example.demosecurity.config.ApplicationUserRole.*;
+
 
 @EnableWebSecurity
 @Configuration
@@ -65,9 +68,14 @@ public class SecurityConfig extends
                 .httpBasic()
                 .and()
                 .authorizeRequests()
-                .antMatchers(HttpMethod.GET, "/person/getAll").hasRole("ADMIN")
-                .antMatchers(HttpMethod.GET,"/person/one/{id}").hasRole("USER")
-                .antMatchers(HttpMethod.POST, "/person/register").hasRole("USER")
+                .antMatchers(HttpMethod.GET, "/person/getAll").hasRole(ADMIN.name())
+                .antMatchers(HttpMethod.GET,"/person/one/{id}").hasRole(USER.name())
+                .antMatchers(HttpMethod.POST, "/person/register").hasRole(USER.name())
+                .antMatchers(HttpMethod.DELETE,"/management/api/**").hasAuthority(COURSE_WRITE.name())
+                .antMatchers(HttpMethod.POST,"/management/api/**").hasAuthority(COURSE_WRITE.name())
+                .antMatchers(HttpMethod.PUT,"/management/api/**").hasAuthority(COURSE_WRITE.name())
+                .antMatchers(HttpMethod.GET,"/management/api/**").hasAnyRole(ADMIN.name(),ADMINTRAINER.name())
+
                 .antMatchers("/").permitAll()
                 .and().exceptionHandling().accessDeniedPage("/person/access-deniedSS")
                 .and()
@@ -80,13 +88,17 @@ public class SecurityConfig extends
     @Bean
     protected UserDetailsService userDetailsService()  { //basic auth with userdetail memory type\
         UserDetails user=User.builder()
-                .username("user").password(passwordEncoder.encode("pass")).roles(ApplicationUserRole.USER.name())
+                .username("user").password(passwordEncoder.encode("pass")).roles(USER.name())
                 .build();
 
         UserDetails annaSmithUser=User.builder()
-                .username("pass").password(passwordEncoder.encode("pass")).roles(ApplicationUserRole.ADMIN.name())
+                .username("pass").password(passwordEncoder.encode("pass")).roles(ADMIN.name())
                 .build();
-        return new InMemoryUserDetailsManager(annaSmithUser,user);
+        UserDetails tom=User.builder()
+                .username("tom").password(passwordEncoder.encode("pass")).roles(ADMINTRAINER.name())
+                .build();
+
+        return new InMemoryUserDetailsManager(annaSmithUser,user,tom);
     }
 
 
