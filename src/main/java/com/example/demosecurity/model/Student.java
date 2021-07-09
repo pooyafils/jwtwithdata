@@ -1,13 +1,15 @@
 package com.example.demosecurity.model;
 public class Student {
 
-    private final Integer studentId;
-    private final String studentName;
+    private   Integer studentId;
+    private  String studentName;
 
-    public Student(Integer studentId,
-                   String studentName) {
+    public Student(Integer studentId, String studentName) {
         this.studentId = studentId;
         this.studentName = studentName;
+    }
+
+    public Student() {
     }
 
     public Integer getStudentId() {

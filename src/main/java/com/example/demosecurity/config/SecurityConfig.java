@@ -71,9 +71,9 @@ public class SecurityConfig extends
                 .antMatchers(HttpMethod.GET, "/person/getAll").hasRole(ADMIN.name())
                 .antMatchers(HttpMethod.GET,"/person/one/{id}").hasRole(USER.name())
                 .antMatchers(HttpMethod.POST, "/person/register").hasRole(USER.name())
-                .antMatchers(HttpMethod.DELETE,"/management/api/**").hasAuthority(COURSE_WRITE.name())
-                .antMatchers(HttpMethod.POST,"/management/api/**").hasAuthority(COURSE_WRITE.name())
-                .antMatchers(HttpMethod.PUT,"/management/api/**").hasAuthority(COURSE_WRITE.name())
+                .antMatchers(HttpMethod.DELETE,"/management/api/**").hasAuthority(COURSE_WRITE.getPermission())
+                .antMatchers(HttpMethod.POST,"/management/api/**").hasAuthority(COURSE_WRITE.getPermission())
+                .antMatchers(HttpMethod.PUT,"/management/api/**").hasAuthority(COURSE_WRITE.getPermission())
                 .antMatchers(HttpMethod.GET,"/management/api/**").hasAnyRole(ADMIN.name(),ADMINTRAINER.name())
 
                 .antMatchers("/").permitAll()
@@ -87,18 +87,22 @@ public class SecurityConfig extends
     @Override
     @Bean
     protected UserDetailsService userDetailsService()  { //basic auth with userdetail memory type\
-        UserDetails user=User.builder()
-                .username("user").password(passwordEncoder.encode("pass")).roles(USER.name())
-                .build();
-
         UserDetails annaSmithUser=User.builder()
-                .username("pass").password(passwordEncoder.encode("pass")).roles(ADMIN.name())
+                .username("pass").password(passwordEncoder.encode("pass"))
+               // .roles(ADMIN.name())
+                .authorities(ADMIN.grantedAuthoritySet())
                 .build();
         UserDetails tom=User.builder()
-                .username("tom").password(passwordEncoder.encode("pass")).roles(ADMINTRAINER.name())
+                .username("tom").password(passwordEncoder.encode("pass"))
+                //.roles(ADMINTRAINER.name())
+                .authorities(ADMINTRAINER.grantedAuthoritySet())
                 .build();
-
-        return new InMemoryUserDetailsManager(annaSmithUser,user,tom);
+        UserDetails user=User.builder()
+                .username("user").password(passwordEncoder.encode("pass"))
+                //.roles(USER.name())
+                .authorities(USER.grantedAuthoritySet())
+                .build();
+        return new InMemoryUserDetailsManager(annaSmithUser,tom,user);
     }
 
 
