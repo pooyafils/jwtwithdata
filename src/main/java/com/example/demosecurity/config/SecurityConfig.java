@@ -16,8 +16,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
+import org.springframework.security.web.util.matcher.AndRequestMatcher;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import javax.sql.DataSource;
+
+import java.util.concurrent.TimeUnit;
 
 import static com.example.demosecurity.config.ApplicationUserPermission.*;
 import static com.example.demosecurity.config.ApplicationUserRole.*;
@@ -49,20 +53,28 @@ public class SecurityConfig extends
 
     }*/
 
-/*
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
+                .csrf().disable()
                 .authorizeRequests()
                 .antMatchers("/", "index", "/css/*", "/js/*").permitAll()
                 .anyRequest()
                 .authenticated()
                 .and()
-                .httpBasic();
+                .formLogin().loginPage("/login").permitAll().defaultSuccessUrl("/courses",true)
+                .and().rememberMe().tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(21))
+                .key("something").and()
+                .logout().logoutUrl("/logout")
+                .logoutRequestMatcher(new AntPathRequestMatcher("/logout","GET"))
+                .clearAuthentication(true)
+                .invalidateHttpSession(true).deleteCookies("JSESSIONID","remember-me")
+                .logoutSuccessUrl("/login");
     }
-*/
 
-    @Override
+
+/*    @Override
     protected void configure(HttpSecurity http) throws Exception {
 
         http
@@ -84,7 +96,7 @@ public class SecurityConfig extends
                 .csrf().disable()
                 .formLogin().disable()
         ;
-    }
+    }*/
 
     @Override
     @Bean
