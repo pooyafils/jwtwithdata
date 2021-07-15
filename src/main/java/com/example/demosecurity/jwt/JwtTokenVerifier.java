@@ -15,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.crypto.SecretKey;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -24,19 +25,27 @@ import java.util.List;
 import java.util.Map;
 
 public class JwtTokenVerifier extends OncePerRequestFilter {
+    private final SecretKey secretKey;
+    private final JwtConfig jwtConfig;
+
+    public JwtTokenVerifier(SecretKey secretKey, JwtConfig jwtConfig) {
+        this.secretKey = secretKey;
+        this.jwtConfig = jwtConfig;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, FilterChain filterChain) throws ServletException, IOException {
-        String authorizationHeader=httpServletRequest.getHeader("Authorization");
-        if(Strings.isNullOrEmpty(authorizationHeader)||!authorizationHeader.startsWith("Bearer ")){
+        String authorizationHeader=httpServletRequest.getHeader(jwtConfig.getAuthorizationHeader());
+        if(Strings.isNullOrEmpty(authorizationHeader)||!authorizationHeader.startsWith(jwtConfig.getTokenPrefix())){
             filterChain.doFilter(httpServletRequest,httpServletResponse);
             return;
         }
-        String token=authorizationHeader.replace("Bearer ","");
+        String token=authorizationHeader.replace(jwtConfig.getTokenPrefix(),"");
 
         try{
-            String secretkey="securesecuresecuresecuresecuresecuresecuresecuresecuresecuresecuresecuresecure";
+          //  String secretkey="securesecuresecuresecuresecuresecuresecuresecuresecuresecuresecuresecuresecure";
 
-          Jws<Claims> claims=  Jwts.parser().setSigningKey(Keys.hmacShaKeyFor(secretkey.getBytes()))
+          Jws<Claims> claims=  Jwts.parser().setSigningKey(secretKey)
                     .parseClaimsJws(token);
        Claims body=   claims.getBody();
 

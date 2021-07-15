@@ -1,5 +1,6 @@
 package com.example.demosecurity.config;
 
+import com.example.demosecurity.jwt.JwtConfig;
 import com.example.demosecurity.jwt.JwtTokenVerifier;
 import com.example.demosecurity.jwt.JwtUsernamePasswordAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,7 @@ import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.util.matcher.AndRequestMatcher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
+import javax.crypto.SecretKey;
 import javax.sql.DataSource;
 
 import java.util.concurrent.TimeUnit;
@@ -38,11 +40,14 @@ public class SecurityConfig extends
         WebSecurityConfigurerAdapter {
     private final PasswordEncoder passwordEncoder;
     private final ApplicationUserService applicationUserService;
-
+    private final SecretKey secretKey;
+    private final JwtConfig jwtConfig;
     public SecurityConfig(PasswordEncoder passwordEncoder,ApplicationUserService applicationUserService
-    ) {
+  , SecretKey secretKey, JwtConfig jwtConfig) {
         this.applicationUserService=applicationUserService;
         this.passwordEncoder = passwordEncoder;
+        this.secretKey=secretKey;
+        this.jwtConfig=jwtConfig;
     }
 
   /*  @Override
@@ -66,8 +71,8 @@ public class SecurityConfig extends
         http
                 .csrf().disable().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                .addFilter(new JwtUsernamePasswordAuthenticationFilter(authenticationManager()))
-                .addFilterAfter(new JwtTokenVerifier(),JwtUsernamePasswordAuthenticationFilter.class)
+                .addFilter(new JwtUsernamePasswordAuthenticationFilter(authenticationManager(),jwtConfig,secretKey))
+                .addFilterAfter(new JwtTokenVerifier(secretKey,jwtConfig),JwtUsernamePasswordAuthenticationFilter.class)
                 .authorizeRequests()
                 .antMatchers("/", "index", "/css/*", "/js/*").permitAll()
                 .antMatchers(HttpMethod.GET, "/person/getAll").hasRole(ADMIN.name())
