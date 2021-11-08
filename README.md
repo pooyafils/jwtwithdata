@@ -1,5 +1,5 @@
 # spring security impelemetion type
-in this project i implement basic auth ,form base auth,jwt with database or memory saving a password in the way that we explain before is not save and its better to  encrypt use password for this purpose we create the class `PasswordConfig
+in this project i implement basic auth ,form base auth,jwt with database or memory saving a password in the way that we explain before is not save and its better to  encrypt use password for this purpose we create the class `PasswordConfig`
 . each commit on this repository persent a differnt type of the spring security impelemetion. let check it out one by one 
 ## basic auth
 this implemention has a simple logic that you need to :
@@ -91,5 +91,185 @@ create the bean form UserDetailsService interface in `SecurityConfig` class.
     }
    ```
    now we should update the `antMatcher` in `SecurityConfig` like  ` .antMatchers(HttpMethod.GET, "/person/getAll").hasRole(ADMIN.name())`
+### permissions
+so far we have role base Authentication and Authorization in this stpes we will add permissions to our system  [related commit](http://handlebarsjs.com/8888)
+1.  add `getPermissions()` method to  ``ApplicationUserRole`` class
+```
+  public Set<ApplicationUserPermission> getPermissions() {
+        return permissions;
+    }
+    public Set<SimpleGrantedAuthority> grantedAuthoritySet(){
+        Set<SimpleGrantedAuthority>   permissions=     getPermissions().stream().map(permission->new SimpleGrantedAuthority(permission.getPermission()))
+                .collect(Collectors.toSet());
+        permissions.add(new SimpleGrantedAuthority("ROLE_"+this.name()));
+        return permissions;
 
-       
+    }
+```
+2. Now there is two part of the code that need to updated first we need to call `authorities(USER.grantedAuthoritySet())` method  in `userDetailsService()` to get the user permissions and role. second we need to 
+```
+//to check if user has a permission to access this url
+.antMatchers(HttpMethod.DELETE,"/management/api/**").hasAuthority(COURSE_WRITE.getPermission())
+```
+## Form base Authentication and Authorization
+as you see in basic auth we need to send user name and passowrd everytime we want o asscess url. in form base  Authentication and Authorization as you see in the picture you only send a username and password once and than a session will created for you so later on when you want to access that url spring security will check if your session is valid so you can aceess the url otherwise you need to send username and password again
+1. you only need to change `protected void configure(HttpSecurity http)` and crate the controller for login and Access Denied Page
+(http://handlebarsjs.com/10).
+```
+@Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+                .csrf().disable() 
+                .authorizeRequests()
+                .antMatchers("/", "index", "/css/*", "/js/*").permitAll() // urls that must not be under spring security
+                .anyRequest()
+                .authenticated()
+                .and()
+                .formLogin().loginPage("/login").permitAll().defaultSuccessUrl("/courses",true)
+                .and().rememberMe().tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(21)) //how long session must be valid
+                .key("something").and()
+                .logout().logoutUrl("/logout")
+                .logoutRequestMatcher(new AntPathRequestMatcher("/logout","GET"))
+                .clearAuthentication(true)
+                .invalidateHttpSession(true).deleteCookies("JSESSIONID","remember-me")
+                .logoutSuccessUrl("/login"); //custom login page
+    }
+ ```
+## JWT
+jwt means  json web token. after user complete Authentication and Authorization spring security will generate the token and later on when user wan to access url,  user only send token to the application and than spring security will check out if user can access to the url or not
+1. add maven dependency (http://handlebarsjs.com/last one ).
+```
+<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-api</artifactId>
+			<version>0.10.7</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>0.10.7</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>0.10.7</version>
+			<scope>runtime</scope>
+		</dependency>
+  ```
+ 2. we need to develop JwtUsernamePasswordAuthenticationFilter class to do authentication and generate token and send it back to the client. we need also the create the class UsernameAndPasswordAuthenticationRequest to take the username and password
+ ```
+ public class JwtUsernamePasswordAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+    private final AuthenticationManager authenticationManager;
+
+    public JwtUsernamePasswordAuthenticationFilter(AuthenticationManager authenticationManager) {
+        this.authenticationManager = authenticationManager;
+    }
+
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
+        try {
+            UsernameAndPasswordAuthenticationRequest authenticationRequest = new ObjectMapper().readValue(request.getInputStream(), UsernameAndPasswordAuthenticationRequest.class);
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                    authenticationRequest.getUsername(),
+                    authenticationRequest.getPassword()
+            );
+
+            Authentication authentications = authenticationManager.authenticate(authentication);
+            return authentications;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    @Override
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
+      String token=  Jwts.builder()
+                .setSubject(authResult.getName()).claim("authorities",authResult.getAuthorities())
+                .setIssuedAt(new Date()).setExpiration(java.sql.Date.valueOf(LocalDate.now().plusDays(2)))
+                .signWith(Keys.hmacShaKeyFor("securesecuresecuresecuresecuresecuresecuresecuresecuresecuresecuresecuresecure".getBytes()))
+                .compact();
+      response.addHeader("Authorization","Bearer "+token);
+    }
+}
+```
+3. verify the token-> now we need to verify the token that we generate for client to access to the api.we need to create and develop Jwtconfig , JwtSecretKey ,JwtTokenVerifier and add some external properties to the application.properties.we need to do some changes in JwtUsernamePasswordAuthenticationFilter class
+```
+public class JwtUsernamePasswordAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+    private final AuthenticationManager authenticationManager;
+    private final JwtConfig jwtConfig;
+    private final SecretKey secretKey;
+    public JwtUsernamePasswordAuthenticationFilter(AuthenticationManager authenticationManager,JwtConfig jwtConfig,SecretKey secretKey) {
+        this.authenticationManager = authenticationManager;
+        this.jwtConfig=jwtConfig;
+        this.secretKey=secretKey;
+    }
+
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
+        try {
+            UsernameAndPasswordAuthenticationRequest authenticationRequest = new ObjectMapper().readValue(request.getInputStream(), UsernameAndPasswordAuthenticationRequest.class);
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                    authenticationRequest.getUsername(),
+                    authenticationRequest.getPassword()
+            );
+
+            Authentication authentications = authenticationManager.authenticate(authentication);
+            return authentications;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    @Override
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
+      //  String key="securesecuresecuresecuresecuresecuresecuresecuresecuresecuresecuresecuresecure";
+      String token=  Jwts.builder()
+                .setSubject(authResult.getName()).claim("authorities",authResult.getAuthorities())
+                .setIssuedAt(new Date()).setExpiration(java.sql.Date.valueOf(LocalDate.now().plusDays(jwtConfig.getTokenExpirationAfterDays())))
+               // .signWith(Keys.hmacShaKeyFor(key.getBytes()))
+              .signWith(secretKey)
+                .compact();
+     // response.addHeader("Authorization","Bearer "+token);
+        response.addHeader(jwtConfig.getAuthorizationHeader(),jwtConfig.getTokenPrefix()+token);
+
+    }
+}
+```
+4. in this implention we are having in memory  but we set up the basement for you in other to have db in futer so first we need to create `ApplicationUserService` class that implement `UserDetailsService` interface we need to create the other class in order to load users data and send it to  `ApplicationUserService` class . for this reason we should create `FakeApplicationUserDaoService` class and inject it to the `ApplicationUserService` class
+5. in the last step we need to enject the SecretKey,JwtConfig,ApplicationUserService,PasswordEncoder to the ` SecurityConfig` class and set the new filter for jwst in `configure(HttpSecurity http) ` method
+```
+public class SecurityConfig extends
+        WebSecurityConfigurerAdapter {
+    private final PasswordEncoder passwordEncoder;
+    private final ApplicationUserService applicationUserService;
+    private final SecretKey secretKey;
+    private final JwtConfig jwtConfig;
+    public SecurityConfig(PasswordEncoder passwordEncoder,ApplicationUserService applicationUserService
+  , SecretKey secretKey, JwtConfig jwtConfig) {
+        this.applicationUserService=applicationUserService;
+        this.passwordEncoder = passwordEncoder;
+        this.secretKey=secretKey;
+        this.jwtConfig=jwtConfig;
+    }
+@Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+                .csrf().disable().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                .addFilter(new JwtUsernamePasswordAuthenticationFilter(authenticationManager(),jwtConfig,secretKey))
+                .addFilterAfter(new JwtTokenVerifier(secretKey,jwtConfig),JwtUsernamePasswordAuthenticationFilter.class)
+                .authorizeRequests()
+                .antMatchers("/", "index", "/css/*", "/js/*").permitAll()
+                .antMatchers(HttpMethod.GET, "/person/getAll").hasRole(ADMIN.name())
+                .antMatchers(HttpMethod.GET,"/person/one/{id}").hasRole(USER.name())
+                .anyRequest()
+                .authenticated();
+
+    }}
+   ```
+
