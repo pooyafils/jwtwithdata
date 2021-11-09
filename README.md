@@ -1,17 +1,17 @@
-# spring security impelemetion type
-in this project i implement basic auth ,form base auth,jwt with database or memory saving a password in the way that we explain before is not save and its better to  encrypt use password for this purpose we create the class `PasswordConfig`
+# Spring security impelemetion type
+in this project i implement basic auth ,form base auth,jwt with database or memory Authentication and Authorization.security in spring is a long topic but i tried to explain it as much possible in the short readme file
 . each commit on this repository persent a differnt type of the spring security impelemetion. let check it out one by one 
-## basic auth
+## Basic auth
 this implemention has a simple logic that you need to :
 1. create the class `SecurityConfig` that extend` WebSecurityConfigurerAdapter` abstract class and than override `protected void configure(HttpSecurity http)` method to set up your security policy.
 for this implemention we choose database Authentication and Authorization.
-2. you need to create the class that manage the database connections and that ovrrider an other method `protected void configure(AuthenticationManagerBuilder auth)` in `SecurityConfig` class
-3. whem your are saving a user password in database you must save it in this format `{noop}userpassword` and for user role it must be `ROLE_user role` [related commit](http://handlebarsjs.com/1111).
-### im memory db and password encryption
-saving a password in the way that we explain before is not save and its better to  encrypt use password for this purpose
+2. you need to create the class that manage the database connections `AppConfig` and that ovrrider an other method `protected void configure(AuthenticationManagerBuilder auth)` in `SecurityConfig` class
+3. when your are saving a user password in database you must save it in this format `{noop}userpassword` and for user role it must be `ROLE_user role` [related commit](https://github.com/pooyafils/spring-security/tree/1a6179538dbaac9c613e86d6774f6d570b94fd71).
+### Im memory db and password encryption
+saving a password in the way that we explain before is not safe and its better to  encrypt use password for this purpose
 1. we create the class `PasswordConfig`
 2. now if we want to use in memory  Authentication and Authorization we should create the bean form `UserDetailsService` interface in `SecurityConfig` class.
-The standard and most common implementation is the DaoAuthenticationProvider – which retrieves the user details from a simple, read-only user DAO – the UserDetailsService. This User Details Service only has access to the username in order to retrieve the full user entity. This is enough for most scenarios [related commit](http://handlebarsjs.com/2222).
+The standard and most common implementation is the DaoAuthenticationProvider – which retrieves the user details from a simple, read-only user DAO – the UserDetailsService. This User Details Service only has access to the username in order to retrieve the full user entity. This is enough for most scenarios [related commit](https://github.com/pooyafils/spring-security/tree/8f3012d69e511ba1e01c2bf54398b99adb67eec7).
 ```
 @Override
     @Bean
@@ -21,8 +21,8 @@ The standard and most common implementation is the DaoAuthenticationProvider �
     }
  ```
  **dont forget to remove `protected void configure(AuthenticationManagerBuilder auth)` from `SecurityConfig` class**<br/>
- if you need to have basic auth security that use  database Authentication and Authorization with password encryption  you need to create you need to comment the `userDetailsService()` method and than 
- [related commit](http://handlebarsjs.com/444444).
+ if you need to have basic auth security that use  database Authentication and Authorization with password encryption  you need  to comment the `userDetailsService()` method and than 
+ [related commit](https://github.com/pooyafils/spring-security/tree/86c0b0def1a2035d3dd15fa182fd63e731b0d803).
  ```
      @Autowired
     public void configAuthentication(AuthenticationManagerBuilder auth) throws Exception {
@@ -33,7 +33,7 @@ The standard and most common implementation is the DaoAuthenticationProvider �
         ;
     }
 ```
-### how to implement user permissions and roles
+### How to implement user permissions and roles
 role is a high level view of your user.in the any role we have set of the permissions that they specific what user can do in our application.
 as you can see we have two  roles here student and admin as you can see each have different permissions.
 1. we need create class for permissions
@@ -78,7 +78,7 @@ public enum ApplicationUserPermission {
     }
 }
 ```
-4. now we must update `SecurityConfig` class which we should first comment the `configAuthentication(AuthenticationManagerBuilder auth)` method that we creatw in the last part and again
+4. now we must update `SecurityConfig` class which we should first comment the `configAuthentication(AuthenticationManagerBuilder auth)` method that we create in the last part and again
 create the bean form UserDetailsService interface in `SecurityConfig` class.
 ```
 @Override
@@ -91,8 +91,8 @@ create the bean form UserDetailsService interface in `SecurityConfig` class.
     }
    ```
    now we should update the `antMatcher` in `SecurityConfig` like  ` .antMatchers(HttpMethod.GET, "/person/getAll").hasRole(ADMIN.name())`
-### permissions
-so far we have role base Authentication and Authorization in this stpes we will add permissions to our system  [related commit](http://handlebarsjs.com/8888)
+### Permissions
+so far we have role base Authentication and Authorization in this steps we will add permissions to our system  [related commit](https://github.com/pooyafils/spring-security/tree/54a71f0f49a79b85abe4688145cc593920f72583)
 1.  add `getPermissions()` method to  ``ApplicationUserRole`` class
 ```
   public Set<ApplicationUserPermission> getPermissions() {
@@ -112,9 +112,9 @@ so far we have role base Authentication and Authorization in this stpes we will 
 .antMatchers(HttpMethod.DELETE,"/management/api/**").hasAuthority(COURSE_WRITE.getPermission())
 ```
 ## Form base Authentication and Authorization
-as you see in basic auth we need to send user name and passowrd everytime we want o asscess url. in form base  Authentication and Authorization as you see in the picture you only send a username and password once and than a session will created for you so later on when you want to access that url spring security will check if your session is valid so you can aceess the url otherwise you need to send username and password again
+as you see in basic auth we need to send user name and passowrd everytime we want o access the url. in form base  Authentication and Authorization  you only send a username and password once and than a session will be created for you so later on when you want to access that url spring security will check if your session is valid so you can aceess the url otherwise you need to send username and password again
 1. you only need to change `protected void configure(HttpSecurity http)` and crate the controller for login and Access Denied Page
-(http://handlebarsjs.com/10).
+ [related commit](https://github.com/pooyafils/spring-security/tree/78d71a3b1bef8beb0cab52222701d0dfc0909920).
 ```
 @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -136,8 +136,8 @@ as you see in basic auth we need to send user name and passowrd everytime we wan
     }
  ```
 ## JWT
-jwt means  json web token. after user complete Authentication and Authorization spring security will generate the token and later on when user wan to access url,  user only send token to the application and than spring security will check out if user can access to the url or not
-1. add maven dependency (http://handlebarsjs.com/last one ).
+jwt means  json web token. after user complete Authentication and Authorization spring security will generate the token and later on when user want to access url,  user only send token to the application and than spring security will check out if user can access to the url or not
+1. add maven dependency  [related commit](https://github.com/pooyafils/spring-security/tree/c141e4b371cb93cafa0e7c5deee88205dd44aa29).
 ```
 <dependency>
 			<groupId>io.jsonwebtoken</groupId>
@@ -159,7 +159,7 @@ jwt means  json web token. after user complete Authentication and Authorization 
 			<scope>runtime</scope>
 		</dependency>
   ```
- 2. we need to develop JwtUsernamePasswordAuthenticationFilter class to do authentication and generate token and send it back to the client. we need also the create the class UsernameAndPasswordAuthenticationRequest to take the username and password
+ 2. we need to develop `JwtUsernamePasswordAuthenticationFilter` class to do authentication and generate token and send it back to the client. we need also the create the class `UsernameAndPasswordAuthenticationRequest` to take the username and password
  ```
  public class JwtUsernamePasswordAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     private final AuthenticationManager authenticationManager;
@@ -196,7 +196,7 @@ jwt means  json web token. after user complete Authentication and Authorization 
     }
 }
 ```
-3. verify the token-> now we need to verify the token that we generate for client to access to the api.we need to create and develop Jwtconfig , JwtSecretKey ,JwtTokenVerifier and add some external properties to the application.properties.we need to do some changes in JwtUsernamePasswordAuthenticationFilter class
+3. verify the token--> now we need to verify the token that we generate for client.we need to create and develop Jwtconfig , JwtSecretKey ,JwtTokenVerifier and add some external properties to the application.properties.we need to do some changes in `JwtUsernamePasswordAuthenticationFilter` class
 ```
 public class JwtUsernamePasswordAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     private final AuthenticationManager authenticationManager;
@@ -240,8 +240,8 @@ public class JwtUsernamePasswordAuthenticationFilter extends UsernamePasswordAut
     }
 }
 ```
-4. in this implention we are having in memory  but we set up the basement for you in other to have db in futer so first we need to create `ApplicationUserService` class that implement `UserDetailsService` interface we need to create the other class in order to load users data and send it to  `ApplicationUserService` class . for this reason we should create `FakeApplicationUserDaoService` class and inject it to the `ApplicationUserService` class
-5. in the last step we need to enject the SecretKey,JwtConfig,ApplicationUserService,PasswordEncoder to the ` SecurityConfig` class and set the new filter for jwst in `configure(HttpSecurity http) ` method
+4. in this implementation we are having in memory  but we set up the basement for you in order to have db in future. so first we need to create `ApplicationUserService` class that implement `UserDetailsService` interface we need to create the other class in order to load users data and send it to  `ApplicationUserService` class . for this reason we should create `FakeApplicationUserDaoService` class and inject it to the `ApplicationUserService` class
+5. in the last step we need to enject the SecretKey,JwtConfig,ApplicationUserService,PasswordEncoder to the ` SecurityConfig` class and set the new filter for jwt in `configure(HttpSecurity http) ` method
 ```
 public class SecurityConfig extends
         WebSecurityConfigurerAdapter {
